@@ -22,8 +22,6 @@
 --  dans le back-office (seuls les titres des modules sont réécrits).
 -- =====================================================================
 
-begin;
-
 -- ---------------------------------------------------------------------
 -- 1. Les trois formules
 -- ---------------------------------------------------------------------
@@ -41,9 +39,9 @@ on conflict (code) do update
 -- ---------------------------------------------------------------------
 -- Ni introduction ni bonus : les 20 comptent dans la numérotation, et le
 -- module 1 « Bienvenue » est le premier du programme.
-create temporary table ace_modules (position int primary key, title text not null) on commit drop;
 
-insert into ace_modules (position, title) values
+insert into public.modules (position, title)
+select position, title from (values
   ( 1, 'Bienvenue'),
   ( 2, 'Mindset'),
   ( 3, 'Pourquoi l''IA, et pourquoi maintenant'),
@@ -63,17 +61,36 @@ insert into ace_modules (position, title) values
   (17, 'Sécuriser une app avant de la livrer'),
   (18, 'Ajouter de l''IA chez tes clients'),
   (19, 'Proposer une app à tes clients'),
-  (20, 'Passer de freelance à agence');
-
-insert into public.modules (position, title)
-select position, title from ace_modules
+  (20, 'Passer de freelance à agence')
+) as a(position, title)
 on conflict (position) do update set title = excluded.title;
 
 -- Une leçon par module, au même titre. La vidéo se dépose ensuite dans le
 -- back-office : [À FOURNIR : vidéo du module X].
 insert into public.lessons (module_id, position, title)
 select m.id, 1, a.title
-  from ace_modules a
+  from (values
+  ( 1, 'Bienvenue'),
+  ( 2, 'Mindset'),
+  ( 3, 'Pourquoi l''IA, et pourquoi maintenant'),
+  ( 4, 'Ce que tu vends, et à qui'),
+  ( 5, 'Ton premier site avec l''IA, en direct'),
+  ( 6, 'Le finaliser et le mettre en ligne'),
+  ( 7, 'Trouver et contacter tes premiers prospects'),
+  ( 8, 'Vendre et te faire payer'),
+  ( 9, 'Fixer tes prix'),
+  (10, 'Convaincre au téléphone'),
+  (11, 'Te faire payer chaque mois'),
+  (12, 'Ton portfolio et tes avis clients'),
+  (13, 'Gérer tes clients sans galérer'),
+  (14, 'Tes 30 prochains jours'),
+  (15, 'Les apps à vendre en plus du site'),
+  (16, 'Créer une app avec l''IA : la méthode'),
+  (17, 'Sécuriser une app avant de la livrer'),
+  (18, 'Ajouter de l''IA chez tes clients'),
+  (19, 'Proposer une app à tes clients'),
+  (20, 'Passer de freelance à agence')
+) as a(position, title)
   join public.modules m on m.position = a.position
 on conflict (module_id, position) do update set title = excluded.title;
 
@@ -131,7 +148,6 @@ on conflict (id) do update
       cta_libelle = excluded.cta_libelle
   where public.prochaines_etapes.texte like '[À COMPL%';
 
-commit;
 
 -- Les trois formules, renumérotées d'un coup (fonction de la base ACE,
 -- service_role / SQL Editor seulement).
