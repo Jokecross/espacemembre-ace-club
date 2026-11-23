@@ -1,0 +1,359 @@
+/* ============================================================
+   CHARTE ACE Club — la même que la page de vente (ace.css de la page).
+   Si le client envoie une charte, seules ces variables changent.
+   Un seul accent, pas de dégradé, pas d'effet de verre.
+   ============================================================ */
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/archivo-var.woff2') format('woff2');
+  font-weight: 700 900;
+  font-stretch: 100% 125%;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-var.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+:root {
+  --color-bg: #07090F;            /* fond */
+  --color-surface: #0E121C;       /* cartes */
+  --color-surface-2: #141927;     /* bloc dans une carte */
+  --color-line: rgba(242, 244, 248, .09);
+  --color-line-2: rgba(242, 244, 248, .16);
+  --color-text: #F2F4F8;          /* blanc du logo */
+  --color-text-2: #C9D1E3;
+  --color-text-3: #98A2B6;
+  --color-accent: #7C9CFF;        /* le bleu du logo, seul accent */
+  --color-accent-hover: #95B0FF;
+  --color-accent-soft: rgba(124, 156, 255, .12);
+  --color-on-accent: #07090F;     /* texte posé sur l'accent */
+  --color-error: #FFA3A3;
+
+  /* Les mêmes, en canaux, pour les opacités de Tailwind (bg-accent/20…). */
+  --rgb-bg: 7 9 15;
+  --rgb-surface: 14 18 28;
+  --rgb-surface-2: 20 25 39;
+  --rgb-text: 242 244 248;
+  --rgb-text-2: 201 209 227;
+  --rgb-text-3: 152 162 182;
+  --rgb-accent: 124 156 255;
+  --rgb-accent-hover: 149 176 255;
+  --rgb-error: 255 163 163;
+
+  --font-display: 'Archivo', system-ui, sans-serif;   /* titres, élargie à 112 % */
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --skew: -12deg;                 /* l'inclinaison des barres du logo */
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background: var(--color-bg);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply text-ink antialiased;
+    background: var(--color-bg);
+    font-family: var(--font-ui);
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 {
+    @apply text-navy;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  /* Les grands titres : Archivo 800 élargie, comme sur la page de vente. */
+  h1, h2 {
+    font-family: var(--font-display) !important;
+    font-weight: 800 !important;
+    font-stretch: 112%;
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-[16px] border border-line bg-surface;
+  }
+
+  .card-link {
+    @apply card transition duration-200 hover:-translate-y-0.5 hover:border-accent/50;
+  }
+
+  /* Le bouton de la page de vente : une barre du logo, penchée à -12°.
+     Le fond est porté par ::before, c'est lui qui penche ; le texte reste
+     droit. */
+  .btn {
+    @apply relative inline-flex items-center justify-center gap-2.5 px-6 py-3
+           text-[15px] font-bold text-on-accent transition duration-150
+           disabled:cursor-not-allowed disabled:opacity-50;
+    isolation: isolate;
+    min-height: 48px;
+    letter-spacing: -0.005em;
+    font-family: var(--font-ui);
+  }
+  .btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-accent);
+    border-radius: 8px;
+    transform: skewX(var(--skew));
+    transition: transform .2s ease, background-color .2s ease;
+  }
+  @media (hover: hover) {
+    .btn:hover:not(:disabled)::before {
+      background: var(--color-accent-hover);
+      transform: skewX(var(--skew)) translateY(-2px);
+    }
+  }
+  .btn:active:not(:disabled)::before {
+    transform: skewX(var(--skew));
+  }
+
+  /* Le bouton secondaire : la même barre, en contour. */
+  .btn-ghost {
+    @apply relative inline-flex items-center justify-center gap-2 px-5 py-3
+           text-[14px] font-semibold text-navy transition;
+    isolation: isolate;
+    min-height: 44px;
+  }
+  .btn-ghost::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 1px solid var(--color-line-2);
+    border-radius: 8px;
+    transform: skewX(var(--skew));
+    transition: border-color .2s ease, background-color .2s ease;
+  }
+  @media (hover: hover) {
+    .btn-ghost:hover::before {
+      border-color: rgb(var(--rgb-accent) / .6);
+      background: var(--color-accent-soft);
+    }
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-line-strong px-4 py-3 text-navy
+           transition placeholder:text-muted focus:border-accent focus:outline-none
+           focus:ring-4 focus:ring-accent/20;
+    background: #0A0D15;
+  }
+
+  .eyebrow {
+    @apply text-[11.5px] font-semibold uppercase tracking-[0.16em] text-muted;
+  }
+
+  /* Le mot clé d'un titre : une barre du logo derrière, comme sur la page. */
+  .mot-cle {
+    position: relative;
+    z-index: 0;
+    display: inline-block;
+    color: var(--color-on-accent);
+    padding: 0 .14em;
+    margin: 0 .06em;
+    white-space: nowrap;
+  }
+  .mot-cle::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    top: .04em;
+    bottom: -.06em;
+    background: var(--color-accent);
+    border-radius: .1em;
+    transform: skewX(var(--skew));
+  }
+
+  /* Un emplacement à remplir : visible exprès, comme sur la page de vente. */
+  .todo {
+    display: inline-block;
+    font-family: var(--font-ui);
+    font-size: 12.5px;
+    font-weight: 500;
+    font-stretch: 100%;
+    letter-spacing: 0;
+    line-height: 1.4;
+    color: var(--color-text-2);
+    border: 1px dashed rgb(var(--rgb-accent) / .55);
+    border-radius: 6px;
+    padding: 2px 8px;
+    vertical-align: middle;
+    text-transform: none;
+    white-space: normal;
+  }
+
+  /* La carte qui porte le poids de la page : contour bleu, et les trois
+     barres du « E » du logo dans le coin. */
+  .carte-phare {
+    @apply relative overflow-hidden rounded-[18px] border border-accent/45 bg-surface p-6 sm:p-8;
+  }
+  .carte-phare::after {
+    content: "";
+    position: absolute;
+    top: 22px;
+    right: 26px;
+    width: 34px;
+    height: 22px;
+    pointer-events: none;
+    opacity: .9;
+    background:
+      linear-gradient(var(--color-accent), var(--color-accent)) 0 0 / 100% 5px no-repeat,
+      linear-gradient(var(--color-line-2), var(--color-line-2)) 0 8.5px / 100% 5px no-repeat,
+      linear-gradient(var(--color-line-2), var(--color-line-2)) 0 17px / 100% 5px no-repeat;
+    transform: skewX(var(--skew));
+    border-radius: 1px;
+  }
+  @media (max-width: 639px) {
+    .carte-phare::after { top: 18px; right: 18px; width: 26px; height: 17px;
+      background:
+        linear-gradient(var(--color-accent), var(--color-accent)) 0 0 / 100% 4px no-repeat,
+        linear-gradient(var(--color-line-2), var(--color-line-2)) 0 6.5px / 100% 4px no-repeat,
+        linear-gradient(var(--color-line-2), var(--color-line-2)) 0 13px / 100% 4px no-repeat; }
+  }
+
+  /* Une ligne du programme : un numéro, un titre, un état. */
+  .ligne-video {
+    @apply flex w-full items-center gap-4 rounded-[14px] border border-line bg-surface px-4 py-3.5 text-left transition duration-200 sm:gap-5 sm:px-5 sm:py-4;
+  }
+  @media (hover: hover) {
+    button.ligne-video:hover, a.ligne-video:hover {
+      @apply border-accent/60;
+      transform: translateY(-1px);
+    }
+  }
+  .ligne-video.prochaine {
+    @apply border-accent/70 bg-panel;
+  }
+  .ligne-video.verrou {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  /* Le numéro : penché, dans le contour d'une barre du logo. */
+  .num-video {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 46px;
+    height: 34px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 112%;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--color-accent);
+  }
+  .num-video::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 1px solid rgb(var(--rgb-accent) / .45);
+    border-radius: 6px;
+    transform: skewX(var(--skew));
+  }
+  .prochaine .num-video { color: var(--color-on-accent); }
+  .prochaine .num-video::before { background: var(--color-accent); border-color: var(--color-accent); }
+  .verrou .num-video { color: var(--color-text-3); }
+  .verrou .num-video::before { border-color: var(--color-line-2); }
+
+  .rond-etat {
+    @apply grid h-9 w-9 flex-none place-items-center rounded-full;
+  }
+
+  /* Le jour du workshop : la case de la page de vente (« Jour » + chiffre). */
+  .jour-num {
+    @apply flex flex-none flex-col items-center justify-center rounded-[12px] border border-line-strong bg-canvas;
+    width: 58px;
+    height: 58px;
+  }
+  .jour-num small {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--color-text-3);
+    line-height: 1;
+  }
+  .jour-num b {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 112%;
+    font-size: 23px;
+    line-height: 1.05;
+    color: var(--color-text);
+  }
+  .jour-num.atteint { background: var(--color-accent); border-color: var(--color-accent); }
+  .jour-num.atteint small, .jour-num.atteint b { color: var(--color-on-accent); }
+  .verrou .jour-num b { color: var(--color-text-3); }
+
+  /* Les trois barres du « E » du logo, en marque de section. */
+  .barres {
+    display: inline-block;
+    width: 26px;
+    height: 17px;
+    flex: none;
+    background:
+      linear-gradient(var(--color-accent), var(--color-accent)) 0 0 / 100% 4px no-repeat,
+      linear-gradient(var(--color-text), var(--color-text)) 0 6.5px / 100% 4px no-repeat,
+      linear-gradient(var(--color-text), var(--color-text)) 0 13px / 100% 4px no-repeat;
+    transform: skewX(var(--skew));
+    opacity: .95;
+  }
+
+  /* L'apparition de chaque page, une seule fois. */
+  .page-in {
+    animation: page-in .45s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1
+           text-xs font-bold;
+  }
+  .pill-accent { @apply bg-accent text-on-accent; }
+  .pill-success { @apply bg-success-bg text-success; }
+  .pill-muted { @apply bg-canvas text-muted; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

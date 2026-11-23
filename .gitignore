@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+.DS_Store
+.vercel
+captures
+# Les prompts du workshop ne vont JAMAIS dans le dépôt (il peut être public) :
+# ils se collent dans le back-office ou passent par un script gardé hors git.
+scripts/*prompts*.sql
+scripts/*-prive*.sql
+scripts/demo/
