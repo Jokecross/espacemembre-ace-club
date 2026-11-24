@@ -44,6 +44,134 @@ export function lecteurUrl(input) {
 }
 
 /**
+ * Dépose la vidéo d'une leçon dans le stockage privé, puis la rattache.
+ *
+ * Envoi fragmenté : Supabase refuse les envois classiques au-delà de 50 Mo.
+ * Le fichier part du navigateur directement vers Storage, sans passer par
+ * Vercel, et reprend où il en était si la connexion tombe.
+ */
+async function deposerVideo(lecon, file, onProgress, champs = {}) {
+  const ext = file.name.split('.').pop().toLowerCase()
+  const path = `module-${lecon.module_id}/lecon-${lecon.id}.${ext}`
+  const { data: s } = await supabase.auth.getSession()
+  if (!s.session) throw new Error('Session expirée : reconnecte-toi.')
+
+  await new Promise((ok, ko) => {
+    const upload = new tus.Upload(file, {
+      endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      headers: { authorization: `Bearer ${s.session.access_token}`, 'x-upsert': 'true' },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: 6 * 1024 * 1024, // taille imposée par Supabase
+      metadata: { bucketName: 'videos', objectName: path, contentType: file.type || 'video/mp4' },
+      onError: ko,
+      onProgress: (envoye, total) => onProgress(Math.round((envoye / total) * 100)),
+      onSuccess: ok,
+    })
+    upload.findPreviousUploads().then((avant) => {
+      if (avant.length) upload.resumeFromPreviousUpload(avant[0])
+      upload.start()
+    }, ko)
+  })
+
+  // Une leçon n'a qu'une source : le fichier déposé écarte le lien.
+  const { error } = await supabase
+    .from('lessons')
+    .update({ ...champs, video_path: path, vimeo_url: null })
+    .eq('id', lecon.id)
+  if (error) throw error
+}
+
+/** « Module 07 - Un marché immense.mp4 » → { n: 7, titre: 'Un marché immense' } */
+export function lireNomModule(nom) {
+  // macOS décompose les accents dans les noms de fichiers : on les recompose.
+  const m = nom.normalize('NFC').match(/^Module\s*0*(\d+)\s*[-–—]\s*(.+)\.(?:mp4|mov|m4v|webm)$/i)
+  return m ? { n: Number(m[1]), titre: m[2].trim() } : null
+}
+
+/**
+ * Toutes les vidéos d'un coup : le numéro dans le nom du fichier désigne le
+ * module, et la suite du nom devient son titre, mot pour mot.
+ */
+function DepotEnLot({ modules, onChange }) {
+  const input = useRef(null)
+  const [etat, setEtat] = useState(null)
+  const [enCours, setEnCours] = useState(false)
+
+  async function deposer(liste) {
+    const programme = modules.filter((m) => !m.is_bonus && !m.is_intro)
+    const erreurs = []
+    const faits = new Map()
+    for (const file of liste) {
+      const lu = lireNomModule(file.name)
+      const module = lu && programme[lu.n - 1]
+      if (!lu) erreurs.push(`${file.name} : nom non reconnu (attendu : « Module 01 - Titre.mp4 »)`)
+      else if (!module) erreurs.push(`${file.name} : pas de module ${lu.n}`)
+      else if (!module.lessons.length) erreurs.push(`${file.name} : le module ${lu.n} n'a pas de leçon`)
+      else if (faits.has(lu.n)) erreurs.push(`${file.name} : deux fichiers pour le module ${lu.n}`)
+      else faits.set(lu.n, { file, module, ...lu })
+    }
+    const suite = [...faits.values()].sort((a, b) => a.n - b.n)
+    if (!suite.length) return setEtat({ erreurs, ok: 0, total: 0 })
+
+    setEnCours(true)
+    let ok = 0
+    for (const { file, module, n, titre } of suite) {
+      const dire = (pct) => setEtat({ erreurs, ok, total: suite.length, texte: `Module ${n} : ${pct} %` })
+      dire(0)
+      try {
+        await deposerVideo(module.lessons[0], file, dire, { title: titre })
+        const { error } = await supabase.from('modules').update({ title: titre }).eq('id', module.id)
+        if (error) throw error
+        ok += 1
+      } catch (e) {
+        erreurs.push(`Module ${n} : ${e.message}`)
+      }
+    }
+    setEnCours(false)
+    setEtat({ erreurs, ok, total: suite.length })
+    onChange()
+  }
+
+  return (
+    <div className="card mt-5 p-5">
+      <p className="font-bold text-navy">Déposer toutes les vidéos d'un coup</p>
+      <p className="mt-1 text-sm">
+        Sélectionne les fichiers « Module 01 - Titre.mp4 ». Chaque vidéo va dans son module, qui
+        prend le titre du fichier. Laisse cet onglet ouvert jusqu'à la fin.
+      </p>
+      <button className="btn-ghost mt-3" disabled={enCours} onClick={() => input.current.click()}>
+        {enCours ? 'Envoi en cours…' : 'Choisir les vidéos'}
+      </button>
+      <input
+        ref={input}
+        type="file"
+        accept="video/*"
+        multiple
+        hidden
+        data-depot-lot
+        onChange={(e) => {
+          const liste = [...e.target.files]
+          e.target.value = ''
+          if (liste.length) deposer(liste)
+        }}
+      />
+      {etat && (
+        <div className="mt-3 text-sm" role="status">
+          <p className="font-semibold text-navy">
+            {etat.ok} / {etat.total} vidéos déposées{etat.texte ? ` · ${etat.texte}` : ''}
+          </p>
+          {etat.erreurs.map((e) => (
+            <p key={e} className="text-red-600">{e}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
  * Création des modules et des leçons, et dépôt des vidéos, sans quitter le
  * navigateur. Les fichiers partent directement du Mac vers Supabase Storage.
  */
@@ -127,6 +255,8 @@ export default function Contenu() {
         déposes la vidéo de chaque leçon (fichier ou lien Vimeo, Loom, Tella, Google Drive). Un
         fichier déposé remplace le précédent.
       </p>
+
+      <DepotEnLot modules={modules} onChange={load} />
 
       <div className="mt-5 space-y-4">
         {modules.filter((m) => !m.is_bonus).map((m) => (
@@ -269,48 +399,13 @@ function Lesson({ lesson: l, onChange }) {
     setError('')
     setProgress(0)
 
-    const ext = file.name.split('.').pop().toLowerCase()
-    const path = `module-${l.module_id}/lecon-${l.id}.${ext}`
-    const { data: s } = await supabase.auth.getSession()
-
-    // Envoi fragmenté : Supabase refuse les envois classiques au-delà de
-    // 50 Mo, et une leçon les dépasse toujours. Le fichier part du navigateur
-    // directement vers Storage, sans passer par Vercel, et reprend où il en
-    // était si la connexion tombe.
-    const upload = new tus.Upload(file, {
-      endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
-      retryDelays: [0, 3000, 5000, 10000, 20000],
-      headers: {
-        authorization: `Bearer ${s.session.access_token}`,
-        'x-upsert': 'true',
-      },
-      uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
-      chunkSize: 6 * 1024 * 1024, // taille imposée par Supabase
-      metadata: {
-        bucketName: 'videos',
-        objectName: path,
-        contentType: file.type || 'video/mp4',
-      },
-      onError: (e) => {
-        setError(e.message)
-        setProgress(null)
-      },
-      onProgress: (sent, total) => setProgress(Math.round((sent / total) * 100)),
-      onSuccess: async () => {
-        // Une leçon n'a qu'une source : le fichier déposé écarte le lien Vimeo.
-        await supabase
-          .from('lessons')
-          .update({ video_path: path, vimeo_url: null })
-          .eq('id', l.id)
-        setProgress(null)
-        onChange()
-      },
-    })
-
-    const previous = await upload.findPreviousUploads()
-    if (previous.length) upload.resumeFromPreviousUpload(previous[0])
-    upload.start()
+    try {
+      await deposerVideo(l, file, setProgress)
+      onChange()
+    } catch (e) {
+      setError(e.message)
+    }
+    setProgress(null)
   }
 
   async function uploadDoc(file) {

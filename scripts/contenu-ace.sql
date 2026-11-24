@@ -42,26 +42,26 @@ on conflict (code) do update
 
 insert into public.modules (position, title)
 select position, title from (values
-  ( 1, 'Bienvenue'),
-  ( 2, 'Mindset'),
-  ( 3, 'Pourquoi l''IA, et pourquoi maintenant'),
-  ( 4, 'Ce que tu vends, et à qui'),
-  ( 5, 'Ton premier site avec l''IA, en direct'),
-  ( 6, 'Le finaliser et le mettre en ligne'),
-  ( 7, 'Trouver et contacter tes premiers prospects'),
-  ( 8, 'Vendre et te faire payer'),
-  ( 9, 'Fixer tes prix'),
-  (10, 'Convaincre au téléphone'),
-  (11, 'Te faire payer chaque mois'),
-  (12, 'Ton portfolio et tes avis clients'),
-  (13, 'Gérer tes clients sans galérer'),
-  (14, 'Tes 30 prochains jours'),
-  (15, 'Les apps à vendre en plus du site'),
-  (16, 'Créer une app avec l''IA : la méthode'),
-  (17, 'Sécuriser une app avant de la livrer'),
-  (18, 'Ajouter de l''IA chez tes clients'),
-  (19, 'Proposer une app à tes clients'),
-  (20, 'Passer de freelance à agence')
+  ( 1, 'De 0 à 500 000 euros en un an - la promesse'),
+  ( 2, 'Mon parcours - du McDo à la liberté'),
+  ( 3, 'Pourquoi m’écouter - 200 000 euros en 6 mois, preuves à l’appui'),
+  ( 4, 'Mes élèves - 30 000 euros en 90 jours et plus'),
+  ( 5, 'Ton état d’esprit - fini les excuses'),
+  ( 6, 'Le modèle - l’agence web hybride'),
+  ( 7, 'Un marché immense et des objectifs réalistes'),
+  ( 8, 'Les 3 compétences clés et ton premier site en 2 heures'),
+  ( 9, 'Ton portfolio et ton profil LinkedIn'),
+  (10, 'Trouver des clients - le setting et les appels à froid'),
+  (11, 'Le plan gagnant - LinkedIn et appels à froid en parallèle'),
+  (12, 'Le contrat béton et la mentalité des gagnants'),
+  (13, 'Décrocher ton premier client'),
+  (14, 'Le message d’accroche qui ouvre la porte'),
+  (15, 'La règle d’or et l’upsell - faire grimper ton MRR'),
+  (16, 'Ne jamais être perçu comme un vendeur'),
+  (17, 'Mon histoire - le déclic de l’abonnement'),
+  (18, 'La vraie liberté - géographique et financière'),
+  (19, 'Passe à l’action maintenant'),
+  (20, 'Ceux qui appliquent obtiennent des résultats')
 ) as a(position, title)
 on conflict (position) do update set title = excluded.title;
 
@@ -70,26 +70,26 @@ on conflict (position) do update set title = excluded.title;
 insert into public.lessons (module_id, position, title)
 select m.id, 1, a.title
   from (values
-  ( 1, 'Bienvenue'),
-  ( 2, 'Mindset'),
-  ( 3, 'Pourquoi l''IA, et pourquoi maintenant'),
-  ( 4, 'Ce que tu vends, et à qui'),
-  ( 5, 'Ton premier site avec l''IA, en direct'),
-  ( 6, 'Le finaliser et le mettre en ligne'),
-  ( 7, 'Trouver et contacter tes premiers prospects'),
-  ( 8, 'Vendre et te faire payer'),
-  ( 9, 'Fixer tes prix'),
-  (10, 'Convaincre au téléphone'),
-  (11, 'Te faire payer chaque mois'),
-  (12, 'Ton portfolio et tes avis clients'),
-  (13, 'Gérer tes clients sans galérer'),
-  (14, 'Tes 30 prochains jours'),
-  (15, 'Les apps à vendre en plus du site'),
-  (16, 'Créer une app avec l''IA : la méthode'),
-  (17, 'Sécuriser une app avant de la livrer'),
-  (18, 'Ajouter de l''IA chez tes clients'),
-  (19, 'Proposer une app à tes clients'),
-  (20, 'Passer de freelance à agence')
+  ( 1, 'De 0 à 500 000 euros en un an - la promesse'),
+  ( 2, 'Mon parcours - du McDo à la liberté'),
+  ( 3, 'Pourquoi m’écouter - 200 000 euros en 6 mois, preuves à l’appui'),
+  ( 4, 'Mes élèves - 30 000 euros en 90 jours et plus'),
+  ( 5, 'Ton état d’esprit - fini les excuses'),
+  ( 6, 'Le modèle - l’agence web hybride'),
+  ( 7, 'Un marché immense et des objectifs réalistes'),
+  ( 8, 'Les 3 compétences clés et ton premier site en 2 heures'),
+  ( 9, 'Ton portfolio et ton profil LinkedIn'),
+  (10, 'Trouver des clients - le setting et les appels à froid'),
+  (11, 'Le plan gagnant - LinkedIn et appels à froid en parallèle'),
+  (12, 'Le contrat béton et la mentalité des gagnants'),
+  (13, 'Décrocher ton premier client'),
+  (14, 'Le message d’accroche qui ouvre la porte'),
+  (15, 'La règle d’or et l’upsell - faire grimper ton MRR'),
+  (16, 'Ne jamais être perçu comme un vendeur'),
+  (17, 'Mon histoire - le déclic de l’abonnement'),
+  (18, 'La vraie liberté - géographique et financière'),
+  (19, 'Passe à l’action maintenant'),
+  (20, 'Ceux qui appliquent obtiennent des résultats')
 ) as a(position, title)
   join public.modules m on m.position = a.position
 on conflict (module_id, position) do update set title = excluded.title;
